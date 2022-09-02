@@ -1,0 +1,2 @@
+ACTION=="remove", ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0407", RUN+="/bin/bash /usr/local/bin/yubikey-gnome-lock"
+ACTION=="add", ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0407", RUN+="/bin/bash /usr/local/bin/yubikey-gnome-unlock"

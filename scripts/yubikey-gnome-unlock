@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Find the user running gnome shell
+user=$(/bin/ps -u -p $(/bin/pgrep gnome-shell | /bin/head -n1) | /bin/tail -n1 | /bin/awk '{print $1}')
+
+uid=$(id -u $user)
+
+/bin/su "$user" -c "env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus  dbus-send --session --dest=org.gnome.ScreenSaver --type=method_call --reply-timeout=20000 /org/gnome/ScreenSaver org.gnome.ScreenSaver.SetActive boolean:false"
