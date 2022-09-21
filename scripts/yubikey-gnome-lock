@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# Find the user running gnome shell
-uid=$(/bin/grep Uid /proc/$(/bin/pgrep gnome-shell | /bin/head -n1)/status | /bin/awk '{print $2}')
-user=$(/bin/grep "$uid:" /etc/passwd | cut -d: -f1)
+if [[ "$(id -u)" == "0" ]]; then
+    # Find the user running gnome shell
+    uid=$(/bin/grep Uid /proc/$(/bin/pgrep gnome-shell | /bin/head -n1)/status | /bin/awk '{print $2}')
+    user=$(/bin/grep "$uid:" /etc/passwd | cut -d: -f1)
 
-/bin/su "$user" -c "env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus  dbus-send --type=method_call --dest=org.gnome.ScreenSaver /org/gnome/ScreenSaver org.gnome.ScreenSaver.Lock"
+    /bin/su "$user" -c "env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus  dbus-send --type=method_call --dest=org.gnome.ScreenSaver /org/gnome/ScreenSaver org.gnome.ScreenSaver.Lock"
+    exit 0
+fi
+
+# Find the user running gnome shell
+uid=$(/bin/id -u)
+
+env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus  dbus-send --type=method_call --dest=org.gnome.ScreenSaver /org/gnome/ScreenSaver org.gnome.ScreenSaver.Lock

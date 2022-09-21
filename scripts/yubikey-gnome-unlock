@@ -1,7 +1,29 @@
 #!/bin/bash
 
-# Find the user running gnome shell
-uid=$(/bin/grep Uid /proc/$(/bin/pgrep gnome-shell | /bin/head -n1)/status | /bin/awk '{print $2}')
-user=$(/bin/grep "$uid:" /etc/passwd | cut -d: -f1)
+source ~/.profile
 
-/bin/su "$user" -c "env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus  dbus-send --session --dest=org.gnome.ScreenSaver --type=method_call --reply-timeout=20000 /org/gnome/ScreenSaver org.gnome.ScreenSaver.SetActive boolean:false"
+if [[ "$YK_SERIAL" == "" ]]; then
+	echo "Missing YK_SERIAL env variable, not trusting the requester"
+	exit 1
+fi
+
+if [[ "$(id -u)" == "0" ]]; then
+    # Find the user running gnome shell
+    uid=$(/bin/grep Uid /proc/$(/bin/pgrep gnome-shell | /bin/head -n1)/status | /bin/awk '{print $2}')
+    user=$(/bin/grep "$uid:" /etc/passwd | cut -d: -f1)
+
+    if [[ "$(su $user -c 'gpg --card-status' | grep Serial | awk '{print $NF}')" != "$YK_SERIAL" ]]; then
+    	exit 1
+    fi
+
+    /bin/su "$user" -c "env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus  dbus-send --session --dest=org.gnome.ScreenSaver --type=method_call --reply-timeout=20000 /org/gnome/ScreenSaver org.gnome.ScreenSaver.SetActive boolean:false"
+    exit 0
+fi
+
+uid=$(/bin/id -u)
+
+if [[ "$(gpg --card-status | grep Serial | awk '{print $NF}')" != "$YK_SERIAL" ]]; then
+    exit 1
+fi
+
+env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus  dbus-send --session --dest=org.gnome.ScreenSaver --type=method_call --reply-timeout=20000 /org/gnome/ScreenSaver org.gnome.ScreenSaver.SetActive boolean:false
